@@ -882,24 +882,6 @@ extension LibraryViewController {
 extension LibraryViewController {
     @objc func afetch() { self.fetchSources() }
 
-    func fetchSources() {
-        signedApps = CoreDataManager.shared.getDatedSignedApps()
-        downloadedApps = CoreDataManager.shared.getDatedDownloadedApps()
-
-        DispatchQueue.main.async {
-            UIView.animate(withDuration: 0.1) {
-                self.tableView.reloadData()
-            }
-        }
-    }
-
-    /// Gets the application file path for a specific row and section
-    /// - Parameters:
-    ///   - app: The app object (can be nil as the method will look it up)
-    ///   - row: The row index in the table view
-    ///   - section: The section index in the table view
-    ///   - getuuidonly: Whether to get the UUID path only or the full path
-    /// - Returns: The URL for the application file or nil if not found
     func getApplicationFilePath(
         with app: NSManagedObject?,
         row: Int,
@@ -918,54 +900,6 @@ extension LibraryViewController {
                     return try CoreDataManager.shared.getFilesForSignedAppsWithThrow(
                         for: signedApp, 
                         getuuidonly: getuuidonly
-                    )
-                }
-            } else if section == 1 {
-                if let downloadedApp = app as? DownloadedApps {
-                    return try CoreDataManager.shared.getFilesForDownloadedApps(
-                        for: downloadedApp,
-                        getuuidonly: getuuidonly
-                    )
-                } else if let downloadedApp = getApplication(row: row, section: section) as? DownloadedApps {
-                    return try CoreDataManager.shared.getFilesForDownloadedApps(
-                        for: downloadedApp,
-                        getuuidonly: getuuidonly
-                    )
-                }
-            }
-            
-            // If we couldn't get the app data, return nil rather than a potentially invalid URL
-            Debug.shared.log(message: "Could not find app data for path", type: .warning)
-            return nil
-            
-        } catch {
-            Debug.shared.log(message: "Error getting file path: \(error)", type: .error)
-            return nil
-        }
-    }
-
-    /// Gets the application object for a specific row and section in the table view
-    /// - Parameters:
-    ///   - row: The row index in the table view
-    ///   - section: The section index in the table view
-    /// - Returns: The managed object representing the app or nil if not found
-    func getApplication(row: Int, section: Int) -> NSManagedObject? {
-        switch section {
-        case 0:
-            if isFiltering {
-                return row < filteredSignedApps.count ? filteredSignedApps[row] : nil
-            } else {
-                guard let apps = signedApps, row < apps.count else { return nil }
-                return apps[row]
-            }
-            
-        case 1:
-            if isFiltering {
-                return row < filteredDownloadedApps.count ? filteredDownloadedApps[row] : nil
-            } else {
-                guard let apps = downloadedApps, row < apps.count else { return nil }
-                return apps[row]
-            }
             
         default:
             Debug.shared.log(message: "Invalid section index: \(section)", type: .error)
@@ -1015,25 +949,6 @@ extension LibraryViewController: UISearchControllerDelegate, UISearchBarDelegate
 
     var searchBarIsEmpty: Bool {
         return searchController.searchBar.text?.isEmpty ?? true
-    }
-}
-
-/// https://stackoverflow.com/a/75310581
-func presentLoader() -> UIAlertController {
-    let alert = UIAlertController(title: nil, message: "", preferredStyle: .alert)
-    let activityIndicator = UIActivityIndicatorView(style: .large)
-    activityIndicator.translatesAutoresizingMaskIntoConstraints = false
-    activityIndicator.isUserInteractionEnabled = false
-    activityIndicator.startAnimating()
-
-    alert.view.addSubview(activityIndicator)
-
-    NSLayoutConstraint.activate([
-        alert.view.heightAnchor.constraint(equalToConstant: 95),
-        alert.view.widthAnchor.constraint(equalToConstant: 95),
-        activityIndicator.centerXAnchor.constraint(equalTo: alert.view.centerXAnchor),
-        activityIndicator.centerYAnchor.constraint(equalTo: alert.view.centerYAnchor),
-    ])
 
     return alert
 }
